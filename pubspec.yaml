@@ -32,9 +32,21 @@ dependencies:
     sdk: flutter
 
 
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
+  lottie: ^2.7.0
+  http: ^0.13.5
+  shared_preferences:
+  # camera_android: ^0.10.7
+  firebase_core: ^2.11.0
+  overlay_support: ^2.1.0
+  get: ^4.6.5
+  # flutter_typeahead: ^4.3.8
+  flutter_animate: ^4.1.1+1
+  rxdart: ^0.27.7
+  # camera: ^0.10.4
 
 dev_dependencies:
   flutter_test:
@@ -57,11 +69,11 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - images/
+    - images/lottie/
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
