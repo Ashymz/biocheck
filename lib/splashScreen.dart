@@ -15,7 +15,7 @@ class _SplashscreenState extends State<Splashscreen>
     with WidgetsBindingObserver {
   void launch() {
     Timer(const Duration(seconds: 5), () {
-      // Get.to(const Scan());
+      Get.to(const Scan());
     });
   }
 
@@ -33,7 +33,7 @@ class _SplashscreenState extends State<Splashscreen>
       data:
           MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(0.85)),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.black54,
         body: Center(
           child: Column(
             children: [
