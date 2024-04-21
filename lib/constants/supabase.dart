@@ -1,0 +1,4 @@
+const apiKey =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkYmRscWF5cmxrYXh2anRjYW9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTM2NTI3MDUsImV4cCI6MjAyOTIyODcwNX0.ha4BKkagtLw3706ES9OBiqxRoFNzt9_kRLAYsjjEBAU';
+
+const baseUrl = 'https://pdbdlqayrlkaxvjtcaog.supabase.co';

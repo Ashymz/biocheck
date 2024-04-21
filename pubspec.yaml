@@ -37,7 +37,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
   lottie: ^2.7.0
-  http: ^0.13.5
+  http: ^1.2.1
   shared_preferences:
   # camera_android: ^0.10.7
   firebase_core: ^2.11.0
@@ -57,6 +57,12 @@ dependencies:
   path: 
   # fluttertoast: 
   google_ml_vision: ^0.0.8
+  google_generative_ai: ^0.3.1
+  # supabase_flutter: ^2.0.0
+  supabase_flutter: ^1.10.3
+  supabase: ^1.0.0
+  uuid: ^3.0.4
+  collection: ^1.15.0
   # camera: ^0.10.4
 
 dev_dependencies:
