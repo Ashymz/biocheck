@@ -17,9 +17,16 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase/supabase.dart';
-
+import 'dart:io';
+import 'package:image_compare/image_compare.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:io';
+import 'package:image/image.dart' as img;
+import 'package:image_compare/image_compare.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:image/image.dart' as imag;
 
 // import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -32,6 +39,9 @@ class Scan extends StatefulWidget {
 
 class _ScanState extends State<Scan> {
   final String storageKey = 'attendanceData';
+
+  File? snappedImage;
+  File? storeImage;
 
   Future<void> _saveAttendance(String id, String matricNo, String timestamp,
       File imageFile, BuildContext context) async {
@@ -59,11 +69,22 @@ class _ScanState extends State<Scan> {
 
       final String jsonData = jsonEncode(data);
       print('Data to be saved: $data');
-      await prefs.setString('attendance_$id', jsonData);
-      print(jsonData);
+
+      // Retrieve existing attendance list
+      final List<String>? existingList =
+          prefs.getStringList('attendanceList') ?? [];
+
+      // Add new data to the list
+      existingList!.add(jsonData);
+
+      // Save updated list
+      prefs.setStringList('attendanceList', existingList);
+
       // Save image to the new file path
       await imageFile.copy(newPath);
       print('Saved data in SharedPreferences: $jsonData');
+
+      print('Saved attendance list: $existingList');
 
       showDialog(
         context: context,
@@ -87,18 +108,21 @@ class _ScanState extends State<Scan> {
 
   Future<Map<String, dynamic>?> _getAttendance(String matricNo) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String key = matricNo;
 
     print('Attempting to retrieve data for matricNo: $matricNo');
 
-    if (prefs.containsKey(key)) {
-      final String? jsonData = prefs.getString(key);
+    final List<String>? attendanceList = prefs.getStringList('attendanceList');
 
-      if (jsonData != null) {
-        print('Retrieved Data for matricNo $matricNo: $jsonData');
-        return jsonDecode(jsonData);
-      } else {
-        print('Data for matricNo $matricNo is null.');
+    // Debug: Print the entire attendance list
+    print('Retrieved attendance list: $attendanceList');
+
+    if (attendanceList != null && attendanceList.isNotEmpty) {
+      for (String jsonData in attendanceList) {
+        final Map<String, dynamic> data = jsonDecode(jsonData);
+        if (data['matricNo'] == matricNo) {
+          print('Retrieved Data for matricNo $matricNo: $jsonData');
+          return data;
+        }
       }
     } else {
       print('No data found for matricNo: $matricNo');
@@ -107,77 +131,93 @@ class _ScanState extends State<Scan> {
     return null;
   }
 
-  Future<bool> _compareImages(File newImage, String matricNo) async {
-    final storeData = await _getAttendance(matricNo);
-    print('Retrieved Data: $storeData');
-    print('Comparing images...');
-    print('Comparing images...');
-    print('Comparing images...');
-    print('Comparing images...');
+  // Future<bool> _compareImages(File newImage) async {
+  //   // Retrieve all stored image paths
+  //   final SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   final String? storedDataJson = prefs.getString('attendance_list');
 
-    final Map<String, dynamic>? storedData = await _getAttendance(matricNo);
+  //   if (storedDataJson != null) {
+  //     final List<Map<String, dynamic>> attendanceList =
+  //         List<Map<String, dynamic>>.from(jsonDecode(storedDataJson));
 
-    if (storedData != null) {
-      print('Stored image data found.');
-      print('Stored image data found.');
-      print('Stored image data found.');
+  //     for (var attendanceData in attendanceList) {
+  //       final String storedImagePath = attendanceData['image_path'];
+  //       final File storedImageFile = File(storedImagePath);
 
-      final String storedImagePath = storedData['image_path'];
-      final File storedImageFile = File(storedImagePath);
-      print('Stored Image Path: $storedImagePath');
-      print('Stored Image Path: $storedImagePath');
-      print('Stored Image Path: $storedImagePath');
+  //       if (await storedImageFile.exists()) {
+  //         final similarityScore =
+  //             await _runPythonImageComparison(storedImageFile, newImage);
 
-      if (await storedImageFile.exists()) {
-        final List<int> storedImageBytes = await storedImageFile.readAsBytes();
-        final List<int> newImageBytes = await newImage.readAsBytes();
+  //         print(
+  //             'Similarity Score with stored image $storedImagePath: $similarityScore');
 
-        print('Stored Image Bytes Length: ${storedImageBytes.length}');
-        print('Stored Image Bytes Length: ${storedImageBytes.length}');
-        print('Stored Image Bytes Length: ${storedImageBytes.length}');
-        print('New Image Bytes Length: ${newImageBytes.length}');
-        print('New Image Bytes Length: ${newImageBytes.length}');
-        print('New Image Bytes Length: ${newImageBytes.length}');
+  //         if (similarityScore > 0.9) {
+  //           print('Match found!!!!');
+  //           return true; // Images match
+  //         }
+  //       }
+  //     }
+  //   } else {
+  //     print('No stored image data found.');
+  //   }
 
-        final Uint8List storedImageUint8List =
-            Uint8List.fromList(storedImageBytes);
-        final Uint8List newImageUint8List = Uint8List.fromList(newImageBytes);
+  //   print('No match found.');
+  //   return false;
+  // }
 
-        final model = GenerativeModel(
-            model: 'gemini-pro-vision',
-            apiKey: 'AIzaSyBt9ubx4BOLLoOAkMYXhkzHhKfoK6wx5do');
+  // Future<bool> _compareImages(File newImage) async {
+  //   // Retrieve all stored image paths
+  //   final SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   final String? storedDataJson = prefs.getString('attendance_list');
 
-        final prompt = TextPart("What's different between these pictures?");
-        final imageParts = [
-          DataPart('image/jpeg', storedImageUint8List),
-          DataPart('image/jpeg', newImageUint8List),
-        ];
+  //   if (storedDataJson != null) {
+  //     final List<Map<String, dynamic>> attendanceList =
+  //         List<Map<String, dynamic>>.from(jsonDecode(storedDataJson));
 
-        final response = await model.generateContent([
-          Content.multi([prompt, ...imageParts])
-        ]);
+  //     for (var attendanceData in attendanceList) {
+  //       final String storedImagePath = attendanceData['image_path'];
+  //       final File storedImageFile = File(storedImagePath);
 
-        print('Response: $response');
+  //       print(storedImageFile);
+  //       if (await storedImageFile.exists()) {
+  //         var bytes1 = await newImage.readAsBytes();
+  //         var bytes2 = await storedImageFile.readAsBytes();
 
-        if (response.promptFeedback == 'success') {
-          final similarityScore = double.parse(response.text!);
-          print('Similarity Score: $similarityScore');
+  //         var image1 = decodeImage(bytes1);
+  //         var image2 = decodeImage(bytes2);
 
-          if (similarityScore > 0.9) {
-            print('Matched!!!!');
-            return true; // Faces match
-          }
-        } else {
-          print('Error in model response: ${response.promptFeedback}');
-        }
-      } else {
-        print('Stored image file does not exist.');
-      }
-    } else {
-      print('No stored image data found.');
-    }
+  //         var similarity = await compareImages(
+  //             src1: image1,
+  //             src2: image2,
+  //             algorithm: ChiSquareDistanceHistogram());
 
-    return false;
+  //         print(
+  //             'Similarity with stored image $storedImagePath: ${similarity * 100}%');
+
+  //         if (similarity > 0.9) {
+  //           print('Match found!!!!');
+  //           return true; // Images match
+  //         }
+  //       }
+  //     }
+  //   } else {
+  //     print('No stored image data found.');
+  //   }
+
+  //   print('No match found.');
+  //   return false;
+  // }
+
+  Future<double> _runPythonImageComparison(
+      File storedImage, File newImage) async {
+    const scriptPath = 'lib/presentation/compare_images.py';
+    final process = await Process.start(
+        'python', [scriptPath, storedImage.path, newImage.path]);
+
+    final output = await process.stdout.transform(utf8.decoder).toList();
+    final similarityScore = double.parse(output.first.trim());
+
+    return similarityScore;
   }
 
   Future<File?> captureImage() async {
@@ -190,9 +230,35 @@ class _ScanState extends State<Scan> {
     return null;
   }
 
+  Future<bool> _compareImages(File newImage, File storedImage) async {
+    var bytes1 = await newImage.readAsBytes();
+    var bytes2 = await storedImage.readAsBytes();
+
+    var image1 = img.decodeImage(bytes1);
+    var image2 = img.decodeImage(bytes2);
+
+    if (image1 != null && image2 != null) {
+      var similarity = await compareImages(
+        src1: image1,
+        src2: image2,
+        algorithm: ChiSquareDistanceHistogram(),
+      );
+
+      print('Similarity with stored image: ${similarity * 100}%');
+
+      if (similarity > 0.9) {
+        print('Match found!!!!');
+        return true; // Images match
+      }
+    }
+
+    print('No match found.');
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    Color myColor = const Color.fromARGB(255, 124, 12, 180);
+    // Color myColor = const Color.fromARGB(255, 124, 12, 180);
     height = MediaQuery.of(context).size.height;
     width = MediaQuery.of(context).size.width;
     return MediaQuery(
@@ -229,6 +295,20 @@ class _ScanState extends State<Scan> {
                             color: Colors.grey,
                             fontWeight: FontWeight.normal)),
                     const SizedBox(height: 10),
+                    snappedImage != null
+                        ? Image.file(
+                            snappedImage!,
+                            width: 200,
+                            height: 200,
+                          )
+                        : const SizedBox.shrink(),
+                    storeImage != null
+                        ? Image.file(
+                            storeImage!,
+                            width: 200,
+                            height: 200,
+                          )
+                        : const SizedBox.shrink(),
                     // Padding(
                     //   padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
                     //   child: GestureDetector(
@@ -250,56 +330,79 @@ class _ScanState extends State<Scan> {
                             String timestamp = now.toIso8601String();
                             _saveAttendance(timestamp, timestamp, timestamp,
                                 capturedImage, context);
-                            bool isMatch =
-                                await _compareImages(capturedImage, timestamp);
+                            // bool isMatch = await _compareImages(capturedImage);
+                            // if (isMatch) {
+                            //   print(
+                            //       'Match found. Showing "Already Present" dialog.');
+
+                            //   // showDialog(
+                            //   //   context: context,
+                            //   //   builder: (context) => AlertDialog(
+                            //   //     title: Text('Attendance Marked!'),
+                            //   //     content: const Text('Already Present'),
+                            //   //     actions: [
+                            //   //       TextButton(
+                            //   //         onPressed: () {
+                            //   //           Navigator.pop(context);
+                            //   //         },
+                            //   //         child: Text('OK'),
+                            //   //       ),
+                            //   //     ],
+                            //   //   ),
+                            //   // );
+                            // }
+                            // else {
+                            //   print(
+                            //       'No match found. Showing "New Attendance Marked" dialog.');
+                            //   // Save new attendance
+                            //   DateTime now = DateTime.now();
+                            //   String timestamp = now.toIso8601String();
+                            //   _saveAttendance(timestamp, timestamp, timestamp,
+                            //       capturedImage, context);
+                            //   // showDialog(
+                            //   //   context: context,
+                            //   //   builder: (context) => AlertDialog(
+                            //   //     title: Text('New Attendance Marked!'),
+                            //   //     content: Text('You are marked present.'),
+                            //   //     actions: [
+                            //   //       TextButton(
+                            //   //         onPressed: () {
+                            //   //           Navigator.pop(context);
+                            //   //         },
+                            //   //         child: Text('OK'),
+                            //   //       ),
+                            //   //     ],
+                            //   //   ),
+                            //   // );
+                            // }
+                          }
+                        },
+                        child: Custombutton.button(
+                            Colors.black45, 'Mark Attendance'),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+                      child: GestureDetector(
+                        onTap: () async {
+                          if (snappedImage != null && storeImage != null) {
+                            bool isMatch = await _compareImages(
+                                snappedImage!, storeImage!);
                             if (isMatch) {
                               print(
                                   'Match found. Showing "Already Present" dialog.');
-
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: Text('Attendance Marked!'),
-                                  content: const Text('Already Present'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text('OK'),
-                                    ),
-                                  ],
-                                ),
-                              );
                             } else {
                               print(
                                   'No match found. Showing "New Attendance Marked" dialog.');
-                              // Save new attendance
-                              DateTime now = DateTime.now();
-                              String timestamp = now.toIso8601String();
-                              _saveAttendance(timestamp, timestamp, timestamp,
-                                  capturedImage, context);
-                              // showDialog(
-                              //   context: context,
-                              //   builder: (context) => AlertDialog(
-                              //     title: Text('New Attendance Marked!'),
-                              //     content: Text('You are marked present.'),
-                              //     actions: [
-                              //       TextButton(
-                              //         onPressed: () {
-                              //           Navigator.pop(context);
-                              //         },
-                              //         child: Text('OK'),
-                              //       ),
-                              //     ],
-                              //   ),
-                              // );
                             }
                           }
                         },
-                        child: Custombutton.button(myColor, 'Mark Attendance'),
+                        child: Custombutton.button(
+                          Colors.black45,
+                          'Compare Images',
+                        ),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -307,119 +410,4 @@ class _ScanState extends State<Scan> {
           ),
         ));
   }
-// }
-
-// import 'dart:convert';
-// import 'dart:io';
-// import 'package:flutter/material.dart';
-// import 'package:image_picker/image_picker.dart';
-// import 'package:path_provider/path_provider.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:collection/collection.dart';
-
-// class Scan extends StatefulWidget {
-//   const Scan({Key? key}) : super(key: key);
-
-//   @override
-//   _ScanState createState() => _ScanState();
-// }
-
-// class _ScanState extends State<Scan> {
-//   final ImagePicker _picker = ImagePicker();
-//   File? savedImage;
-
-//   Future<void> _saveImage(File image) async {
-//     final Directory directory = await getApplicationDocumentsDirectory();
-//     final String path = '${directory.path}/saved_image.jpg';
-
-//     await image.copy(path);
-//     setState(() {
-//       savedImage = File(path);
-//     });
-//   }
-
-//   Future<File?> _captureImage() async {
-//     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
-
-//     if (pickedFile != null) {
-//       return File(pickedFile.path);
-//     }
-//     return null;
-//   }
-
-//   Future<bool> _compareImages(File newImage) async {
-//     if (savedImage == null) {
-//       return false;
-//     }
-
-//     final List<int> savedImageBytes = await savedImage!.readAsBytes();
-//     final List<int> newImageBytes = await newImage.readAsBytes();
-
-//     bool isMatch = ListEquality().equals(savedImageBytes, newImageBytes);
-
-//     return isMatch;
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Image Comparison'),
-//       ),
-//       body: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: <Widget>[
-//             savedImage != null
-//                 ? Image.file(savedImage!)
-//                 : Text('No saved image'),
-//             ElevatedButton(
-//               onPressed: () async {
-//                 File? capturedImage = await _captureImage();
-//                 if (capturedImage != null) {
-//                   await _saveImage(capturedImage);
-//                   bool isMatch = await _compareImages(capturedImage);
-//                   if (isMatch) {
-//                     showDialog(
-//                       context: context,
-//                       builder: (context) => AlertDialog(
-//                         title: Text('Image Match!'),
-//                         content: Text('Images are identical.'),
-//                         actions: [
-//                           TextButton(
-//                             onPressed: () {
-//                               Navigator.pop(context);
-//                             },
-//                             child: Text('OK'),
-//                           ),
-//                         ],
-//                       ),
-//                     );
-//                   } else {
-//                     showDialog(
-//                       context: context,
-//                       builder: (context) => AlertDialog(
-//                         title: Text('Image Mismatch!'),
-//                         content: Text('Images are different.'),
-//                         actions: [
-//                           TextButton(
-//                             onPressed: () {
-//                               Navigator.pop(context);
-//                             },
-//                             child: Text('OK'),
-//                           ),
-//                         ],
-//                       ),
-//                     );
-//                   }
-//                 }
-//               },
-//               child: Text('Capture and Compare Image'),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
 }

@@ -64,7 +64,8 @@ dependencies:
   uuid: ^3.0.4
   collection: ^1.15.0
   # camera: ^0.10.4
-
+  image_compare: ^1.1.2
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
