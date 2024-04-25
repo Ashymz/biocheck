@@ -15,7 +15,7 @@ class _SplashscreenState extends State<Splashscreen>
     with WidgetsBindingObserver {
   void launch() {
     Timer(const Duration(seconds: 5), () {
-      Get.to(const Scan());
+      Get.to(Scan());
     });
   }
 

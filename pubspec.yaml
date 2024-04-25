@@ -65,7 +65,8 @@ dependencies:
   collection: ^1.15.0
   # camera: ^0.10.4
   image_compare: ^1.1.2
-  
+  # firebase_ml_vision: 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
