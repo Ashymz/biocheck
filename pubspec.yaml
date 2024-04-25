@@ -44,7 +44,7 @@ dependencies:
   overlay_support: ^2.1.0
   get: ^4.6.5
   # flutter_typeahead: ^4.3.8
-  flutter_animate: ^4.1.1+1
+  # flutter_animate: ^4.1.1+1
   rxdart: ^0.27.7
   intl: ^0.19.0
   image_picker: ^0.8.4+2 
@@ -53,16 +53,16 @@ dependencies:
   # google_generative_ai: ^0.0.1-dev
   path_provider: ^2.0.8
   camera: ^0.10.1
-  flutter_tflite: ^1.0.1
+  # flutter_tflite: ^1.0.1
   path: 
   # fluttertoast: 
-  google_ml_vision: ^0.0.8
-  google_generative_ai: ^0.3.1
+  # google_ml_vision: ^0.0.8
+  # google_generative_ai: ^0.3.1
   # supabase_flutter: ^2.0.0
-  supabase_flutter: ^1.10.3
-  supabase: ^1.0.0
-  uuid: ^3.0.4
-  collection: ^1.15.0
+  # supabase_flutter: ^1.10.3
+  # supabase: ^1.0.0
+  # uuid: ^3.0.4
+  # collection: ^1.15.0
   # camera: ^0.10.4
   image_compare: ^1.1.2
   # firebase_ml_vision: 
